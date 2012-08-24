@@ -11,20 +11,10 @@
 # Data sources: WINSS (http://data.dpi.state.wi.us/data/)
 # WISEemaps (http://wisemaps.dpi.wi.gov)
 
-
-# Setup packages
-require(maptools)
-require(RColorBrewer)
-require(gridExtra)
-require(grid)
-require(ggplot2)
-require(mapproj)
-gpclibPermit()
-
 # Read in data
 # Loop through CSV files of public data on FRL populations
 for(i in 2001:2012){
-  eval(parse(text=paste("frl",i,"<-read.csv('frl",i,".csv')",sep="")))
+  eval(parse(text=paste("frl",i,"<-read.csv('data/frl",i,".csv')",sep="")))
   eval(parse(text=paste("frl",i,"<-frl",i,"[,c(1,7,11,13:17)]",sep="")))
 }
 
@@ -73,15 +63,34 @@ library(maptools)
 library(RColorBrewer)
 library(ggplot2)
 library(mapproj)
+require(gpclib)
 gpclibPermit()
 
 # Acquire shapefile
-dir.create("/shapefile")
+dir.create("shapefile")
 
+# Download script reads from Dropbox share
+# mode argument writes files as binaries and not as text
 
+download.file("http://dl.dropbox.com/u/1811289/shapefile/publicshapefileUHS.shp",
+              destfile=paste(getwd(),"/shapefile/publicshapefileUHS.shp",sep=""),mode="wb")
+
+download.file("http://dl.dropbox.com/u/1811289/shapefile/publicshapefileUHS.shx",
+              destfile=paste(getwd(),"/shapefile/publicshapefileUHS.shx",sep=""),mode="wb")
+
+download.file("http://dl.dropbox.com/u/1811289/shapefile/publicshapefileUHS.dbf",
+              destfile=paste(getwd(),"/shapefile/publicshapefileUHS.dbf",sep=""),mode="wb")
+
+download.file("http://dl.dropbox.com/u/1811289/shapefile/publicshapefileUHS.qpj",
+              destfile=paste(getwd(),"/shapefile/publicshapefileUHS.qpj",sep=""),mode="wb")
+
+download.file("http://dl.dropbox.com/u/1811289/shapefile/publicshapefileUHS.prj",
+              destfile=paste(getwd(),"/shapefile/publicshapefileUHS.prj",sep=""),mode="wb")
 
 # Read in shapefile
-distall<-readShapePoly("shapefile/publicshapefileUHS")
+fn<-paste(getwd(),"/shapefile/publicshapefileUHS",sep="")
+distall<-readShapePoly(fn)
+
 # Read in map themes
 source('ggplot2themes.R')
 
@@ -101,22 +110,23 @@ row.names(di)<-di$sort2
 distall2<-spCbind(distall,di)
 #rm(y,VAmath)
 
-
+# Make the object back into a data frame we can plot with ggplot2 methods
 df.points = fortify(distall2,region='CODE')
 df.points=merge(df.points,distall2@data,by.x='id',by.y='CODE')
-
 df.points<-df.points[order(df.points$group,df.points$piece,
                            df.points$order),]
 
-
+# Get names for labeling polygons
 cnames<-cbind(coordinates(distall2),distall2@data$CODE,
               as.character(distall2@data$NAME))
+# Match names to district ID 
 cnames<-data.frame(long=as.numeric(cnames[,1]),lat=as.numeric(cnames[,2]),
                    distid=cnames[,3],
                    distname=cnames[,4])
 
+# Remove unnecessary items from workspace
 rm(d,di,frl,y,distall,distall2)
-
+# Clean up the memory
 gc()
 
 # Fix colors across years at 10% intervals
@@ -143,7 +153,6 @@ for(i in 2001:2012){
   eval(parse(text=paste("print(ineq3",i,")",sep="")))
   dev.off()
   eval(parse(text=paste("rm(ineq3",i,")",sep="")))
-  
 }
 
 # Fix colors (same palette as above)
