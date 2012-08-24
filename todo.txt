@@ -1,0 +1,5 @@
+TODO:
+
+1) Build in functionality to acquire shapefile not hosted on GitHub
+2) Automate building of the map
+3) Add animation instructions and options
